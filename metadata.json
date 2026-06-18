@@ -1,5 +1,5 @@
 {
-  "name": "Session Notes Generator",
-  "description": "A specialized tool that converts raw transcripts into professional HTML session notes with automatic AI image prompts, powered by Gemini 2.0 Flash.",
+  "name": "Be10X Content Studio",
+  "description": "A combined tool with two modes that share one transcript: a Session Notes generator that turns a transcript into professional HTML post-read notes, and a Quiz Generator that turns the same transcript into a structured JSON quiz for LMS import. Powered by Gemini.",
   "requestFramePermissions": []
 }

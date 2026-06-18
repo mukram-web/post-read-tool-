@@ -1,6 +1,5 @@
 export interface SessionMeta {
   title: string;
-  brand: string;
 }
 
 export interface SessionData {
@@ -18,3 +17,8 @@ export interface GenerationStatus {
 }
 
 export type ImageSize = '1K' | '2K' | '4K';
+
+export interface TranscriptMeta {
+  name: string;
+  size: number;
+}
