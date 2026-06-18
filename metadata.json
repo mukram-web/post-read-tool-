@@ -1,0 +1,5 @@
+{
+  "name": "Session Notes Generator",
+  "description": "A specialized tool that converts raw transcripts into professional HTML session notes with automatic AI image prompts, powered by Gemini 2.0 Flash.",
+  "requestFramePermissions": []
+}
