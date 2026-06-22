@@ -29,4 +29,5 @@ export interface GenerateParams {
   transcript: string;
   tagName: string;
   questionCount: number;
+  apiKey: string;
 }

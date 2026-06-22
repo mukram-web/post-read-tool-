@@ -1,8 +1,6 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { GenerateParams, QuestionArray } from "./quizTypes";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const responseSchema: Schema = {
   type: Type.ARRAY,
   items: {
@@ -126,8 +124,9 @@ Verify every item:
 - matches schema
 Replace any violating item until all pass and count equals QUESTION_COUNT.`;
 
-export const generateQuestions = async ({ transcript, tagName, questionCount }: GenerateParams): Promise<QuestionArray> => {
+export const generateQuestions = async ({ transcript, tagName, questionCount, apiKey }: GenerateParams): Promise<QuestionArray> => {
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = `TAG_NAME: ${tagName}
 QUESTION_COUNT: ${questionCount}
 

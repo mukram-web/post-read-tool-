@@ -1,84 +1,110 @@
-import React, { useState } from 'react';
-import { SessionData, GenerationStatus } from './types';
-import { FormSection } from './FormSection';
-import { PreviewSection } from './PreviewSection';
-import { generateSessionNotes } from './geminiService';
-import { DEFAULT_LOGO } from './constants';
-import { Sparkles } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
+import { SessionData, ImageSize } from "../types";
+import { SYSTEM_PROMPT, GEMINI_MODEL, GEMINI_IMAGE_MODEL, BASE_STYLES } from "../constants";
 
-const App: React.FC = () => {
-  const [data, setData] = useState<SessionData>({
-    transcript: '',
-    resources: '',
-    images: '',
-    logo: DEFAULT_LOGO,
-    meta: {
-      title: '',
-      brand: ''
+const getClient = (apiKey: string) => new GoogleGenAI({ apiKey });
+
+export const generateImage = async (prompt: string, size: ImageSize, apiKey: string): Promise<string> => {
+  const client = getClient(apiKey);
+  const response = await client.models.generateContent({
+    model: GEMINI_IMAGE_MODEL,
+    contents: {
+      parts: [{ text: prompt }],
+    },
+    config: {
+      imageConfig: {
+        imageSize: size,
+      }
     }
   });
 
-  const [status, setStatus] = useState<GenerationStatus>({
-    isLoading: false,
-    error: null,
-    result: null
-  });
-
-  const handleGenerate = async () => {
-    setStatus({ isLoading: true, error: null, result: null });
-    try {
-      const html = await generateSessionNotes(data);
-      setStatus({ isLoading: false, error: null, result: html });
-    } catch (err: any) {
-      setStatus({ 
-        isLoading: false, 
-        error: err.message || "Failed to generate notes. Please check your inputs and try again.", 
-        result: null 
-      });
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-indigo-500">
-              Session Notes Generator
-            </h1>
-          </div>
-          <div className="text-xs font-medium text-slate-500 px-3 py-1 bg-slate-100 rounded-full border border-slate-200">
-            Powered by Gemini 2.0 Flash
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-screen-2xl mx-auto p-4 md:p-6 h-[calc(100vh-64px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-          {/* Left Column: Input */}
-          <div className="h-full overflow-hidden">
-            <FormSection 
-              data={data} 
-              setData={setData} 
-              isLoading={status.isLoading} 
-              onSubmit={handleGenerate} 
-            />
-          </div>
-
-          {/* Right Column: Output */}
-          <div className="h-full overflow-hidden">
-            <PreviewSection 
-              htmlContent={status.result} 
-              error={status.error} 
-            />
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  // Extract image from response
+  const candidates = response.candidates;
+  if (candidates) {
+     for (const candidate of candidates) {
+        if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+     }
+  }
+  throw new Error("No image generated.");
 };
 
-export default App;
+export const generateSessionNotes = async (data: SessionData, apiKey: string): Promise<string> => {
+  const client = getClient(apiKey);
+  
+  // Transform resources format from "Label - URL" to "Label | URL" for the prompt
+  const formattedResources = data.resources
+    .split('\n')
+    .map(line => line.replace(' - ', ' | '))
+    .join('\n');
+
+  // Construct the prompt with clear blocks
+  const userPrompt = `
+---METADATA START---
+Title: ${data.meta.title || "Untitled Session"}
+---METADATA END---
+
+---TRANSCRIPT OR NOTES START---
+${data.transcript}
+---TRANSCRIPT OR NOTES END---
+
+---RESOURCES START---
+${formattedResources || ""}
+---RESOURCES END---
+
+---IMAGE URLS START---
+${data.images || ""}
+---IMAGE URLS END---
+`;
+
+  try {
+    const response = await client.models.generateContent({
+      model: GEMINI_MODEL,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        temperature: 0.3,
+      },
+      contents: userPrompt,
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No content generated.");
+    
+    // Clean up markdown code blocks if present
+    const cleanNotesHtml = text.replace(/^```html/, '').replace(/^```/, '').replace(/```$/, '');
+    
+    // Wrap the LLM's HTML body content into the full document structure
+    // Note: LLM generates the H1 and Metadata section now based on instructions
+    const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.meta.title || "Session Notes"}</title>
+  <style>
+    ${BASE_STYLES}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      ${data.logo ? `<img class="logo" src="${data.logo}" alt="Company Logo" />` : ''}
+    </header>
+    <main>
+      ${cleanNotesHtml}
+    </main>
+  </div>
+</body>
+</html>`;
+
+    return fullHtml;
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    throw error;
+  }
+};

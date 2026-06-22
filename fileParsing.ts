@@ -6,6 +6,7 @@ import { generateSessionNotes } from '../services/geminiService';
 import { DEFAULT_LOGO } from '../constants';
 
 interface NotesGeneratorProps {
+  apiKey: string;
   transcript: string;
   setTranscript: (val: string) => void;
   transcriptMeta: TranscriptMeta | null;
@@ -13,6 +14,7 @@ interface NotesGeneratorProps {
 }
 
 const NotesGenerator: React.FC<NotesGeneratorProps> = ({
+  apiKey,
   transcript,
   setTranscript,
   transcriptMeta,
@@ -37,7 +39,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({
   const handleGenerate = async () => {
     setStatus({ isLoading: true, error: null, result: null });
     try {
-      const html = await generateSessionNotes({ ...data, transcript });
+      const html = await generateSessionNotes({ ...data, transcript }, apiKey);
       setStatus({ isLoading: false, error: null, result: html });
     } catch (err: any) {
       setStatus({
@@ -56,6 +58,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({
             <FormSection
               data={data}
               setData={setData}
+              apiKey={apiKey}
               transcript={transcript}
               setTranscript={setTranscript}
               transcriptMeta={transcriptMeta}

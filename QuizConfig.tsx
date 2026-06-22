@@ -12,6 +12,7 @@ const generateId = () => {
 };
 
 interface QuizGeneratorProps {
+  apiKey: string;
   transcript: string;
   setTranscript: (val: string) => void;
   transcriptMeta: TranscriptMeta | null;
@@ -19,6 +20,7 @@ interface QuizGeneratorProps {
 }
 
 const QuizGenerator: React.FC<QuizGeneratorProps> = ({
+  apiKey,
   transcript,
   setTranscript,
   transcriptMeta,
@@ -38,7 +40,7 @@ const QuizGenerator: React.FC<QuizGeneratorProps> = ({
     setQuestions(null);
 
     try {
-      const result = await generateQuestions({ transcript, tagName, questionCount });
+      const result = await generateQuestions({ transcript, tagName, questionCount, apiKey });
       const questionsWithIds = result.map(q => ({ ...q, id: generateId() }));
       setQuestions(questionsWithIds);
     } catch (err: any) {

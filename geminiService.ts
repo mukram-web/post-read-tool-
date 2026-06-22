@@ -7,6 +7,7 @@ import { parseTranscriptFile } from '../utils/fileParsing';
 interface FormSectionProps {
   data: SessionData;
   setData: React.Dispatch<React.SetStateAction<SessionData>>;
+  apiKey: string;
   transcript: string;
   setTranscript: (val: string) => void;
   transcriptMeta: TranscriptMeta | null;
@@ -15,7 +16,7 @@ interface FormSectionProps {
   onSubmit: () => void;
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({ data, setData, transcript, setTranscript, transcriptMeta, setTranscriptMeta, isLoading, onSubmit }) => {
+export const FormSection: React.FC<FormSectionProps> = ({ data, setData, apiKey, transcript, setTranscript, transcriptMeta, setTranscriptMeta, isLoading, onSubmit }) => {
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageSize, setImageSize] = useState<ImageSize>('1K');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -79,7 +80,7 @@ export const FormSection: React.FC<FormSectionProps> = ({ data, setData, transcr
     setGeneratedImage(null);
     
     try {
-      const base64 = await generateImage(imagePrompt, imageSize);
+      const base64 = await generateImage(imagePrompt, imageSize, apiKey);
       setGeneratedImage(base64);
     } catch (err: any) {
       setImageError(err.message || "Failed to generate image.");
