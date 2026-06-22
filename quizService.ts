@@ -4,11 +4,12 @@ import { DEFAULT_LOGO } from '../constants';
 
 interface ApiKeyGateProps {
   onSubmit: (key: string, remember: boolean) => void;
+  initialKey?: string;
 }
 
-const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onSubmit }) => {
-  const [key, setKey] = useState('');
-  const [remember, setRemember] = useState(false);
+const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onSubmit, initialKey = '' }) => {
+  const [key, setKey] = useState(initialKey);
+  const [remember, setRemember] = useState(!!initialKey);
   const [show, setShow] = useState(false);
 
   const handleSubmit = () => {
@@ -60,6 +61,11 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onSubmit }) => {
           />
           <span className="text-sm text-slate-600">Remember me on this device</span>
         </label>
+        {initialKey && (
+          <p className="text-xs text-slate-500 mt-2">
+            Your saved key is filled in — just click Continue, or paste a different key.
+          </p>
+        )}
         {remember && (
           <p className="text-xs text-amber-600 mt-1">
             The key will be saved in this browser so you don't have to re-enter it. Only use this on a device you trust.
